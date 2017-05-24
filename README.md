@@ -30,13 +30,16 @@ vim script to make a menu in cmd line
     call ZF_VimCmdMenuShow()
     ```
 
-1. the above code would show the menu looks like this
+1. you may save the above code to file then `:source` it to see the demo,
+    which should looks like this:
 
     ```
-    choose by j/k or press key, confirm by enter
+    choose by j/k, confirm by press key or <enter>
     > (s)how sth
       e(x)ecute sth
     ```
+
+    the behavior should be same as [scrooloose/nerdtree](https://github.com/scrooloose/nerdtree)'s menu item
 
 # settings
 
@@ -57,7 +60,7 @@ vim script to make a menu in cmd line
 
 * `let g:ZFVimCmdMenu_appendKeyHintLeftText='('`
 * `let g:ZFVimCmdMenu_appendKeyHintRightText=') '`
-* `let g:ZFVimCmdMenu_headerText='choose by j/k or press key, confirm by enter'`
+* `let g:ZFVimCmdMenu_headerText='choose by j/k, confirm by press key or <enter>'`
 * `let g:ZFVimCmdMenu_footerText=''`
 * `let g:ZFVimCmdMenu_indentText='  '`
 * `let g:ZFVimCmdMenu_markText='> '`

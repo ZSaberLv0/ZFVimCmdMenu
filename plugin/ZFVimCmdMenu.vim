@@ -18,7 +18,7 @@ if !exists('g:ZFVimCmdMenu_appendKeyHintRightText')
 endif
 
 if !exists('g:ZFVimCmdMenu_headerText')
-    let g:ZFVimCmdMenu_headerText='choose by j/k or press key, confirm by enter'
+    let g:ZFVimCmdMenu_headerText='choose by j/k, confirm by press key or <enter>'
     if len(g:ZFVimCmdMenu_confirmKeys) > 0
         for i in range(len(g:ZFVimCmdMenu_confirmKeys))
             let g:ZFVimCmdMenu_headerText .= '/' . g:ZFVimCmdMenu_confirmKeys[i]
