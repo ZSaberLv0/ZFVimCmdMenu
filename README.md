@@ -15,7 +15,7 @@ vim script to make a menu in cmd line
     ```
     " define callback function
     function! MyCallback(...)
-        echo a:0
+        echo 'function called with ' . a:0 . ' param:'
         for i in range(a:0)
             execute 'let t=a:' . (i + 1)
             echo t
@@ -23,8 +23,8 @@ vim script to make a menu in cmd line
     endfunction
 
     " add menu item
-    call ZF_VimCmdMenuAdd('s', '(s)how sth', 'MyCallback', 'myParam0', 'myParam1')
-    call ZF_VimCmdMenuAdd('x', 'e(x)ecute sth', 'MyCallback')
+    call ZF_VimCmdMenuAdd('s', '(s)how sth', '', 'MyCallback', 'myParam0', 'myParam1')
+    call ZF_VimCmdMenuAdd('x', 'e(x)ecute sth', 'call MyCallback("test")')
 
     " finally, show the menu
     call ZF_VimCmdMenuShow()
@@ -40,6 +40,16 @@ vim script to make a menu in cmd line
     ```
 
     the behavior should be same as [scrooloose/nerdtree](https://github.com/scrooloose/nerdtree)'s menu item
+
+1. params in `ZF_VimCmdMenuAdd(key, text, command [, callback, callbackParam0, callbackParam1, ...])`
+
+    * `key` : the key to activate the menu item, e.g. `s`,
+        when empty, a default one would be generated,
+        accorrding to `g:ZFVimCmdMenu_noNameItemKeyList`
+    * `text` : the text of the menu item, can be any string
+    * `command` : vim command to `:execute` when menu item selected, do nothing if empty
+    * `callback` : vim function name to `:execute` when menu item selected, do nothing if empty
+    * `callbackParam0 ~ callbackParam7` : params passed to `callback`, passed as string
 
 # settings
 

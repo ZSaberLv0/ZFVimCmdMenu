@@ -58,7 +58,7 @@ let g:ZFVimCmdMenu_itemList = []
 let g:ZFVimCmdMenu_itemIndex = 0
 let s:noNameItemIndex = 0
 
-function! ZF_VimCmdMenuAdd(key, text, callback, ...)
+function! ZF_VimCmdMenuAdd(key, text, command, ...)
     let key = a:key
 
     if len(key) == 0
@@ -70,15 +70,23 @@ function! ZF_VimCmdMenuAdd(key, text, callback, ...)
     let item = {
                 \     'key' : key,
                 \     'text' : a:text,
-                \     'callback' : a:callback,
+                \     'command' : a:command,
                 \ }
-    for i in range(a:0)
-        execute 'let t = a:' . (i + 1)
-        let item['callbackParam' . i] = t
-    endfor
-    for i in range(a:0, 7)
+    if a:0 > 0
+        let item['callback'] = a:1
+    else
+        let item['callback'] = ''
+    endif
+    if a:0 > 1
+        for i in range(2, a:0)
+            execute 'let t = a:' . i
+            let item['callbackParam' . (i - 2)] = t
+        endfor
+    endif
+    for i in range(a:0 - 1, 7)
         let item['callbackParam' . i] = ''
     endfor
+
     call add(g:ZFVimCmdMenu_itemList, item)
 endfunction
 
@@ -222,17 +230,40 @@ function! s:itemSelected(index)
     let g:ZFVimCmdMenu_itemList = []
     let g:ZFVimCmdMenu_itemIndex = 0
     let s:noNameItemIndex = 0
-    let t = ''
-    for i in range(8)
-        let param = item['callbackParam' . i]
-        if len(param) == 0
-            break
-        endif
-        if len(t) > 0
-            let t .= ','
-        endif
-        let t .= '"' . param . '"'
-    endfor
-    execute 'call ' . item.callback . '(' . t . ')'
+
+    if len(item.command) > 0
+        execute item.command
+    endif
+
+    if len(item.callback) > 0
+        let t = ''
+        for i in range(8)
+            let param = item['callbackParam' . i]
+            if len(param) == 0
+                break
+            endif
+            if len(t) > 0
+                let t .= ','
+            endif
+            let t .= '"' . param . '"'
+        endfor
+        execute 'call ' . item.callback . '(' . t . ')'
+    endif
 endfunction
+
+" define callback function
+function! MyCallback(...)
+    echo 'function called with ' . a:0 . ' param:'
+    for i in range(a:0)
+        execute 'let t=a:' . (i + 1)
+        echo t
+    endfor
+endfunction
+
+" add menu item
+call ZF_VimCmdMenuAdd('s', '(s)how sth', '', 'MyCallback', 'myParam0', 'myParam1')
+call ZF_VimCmdMenuAdd('x', 'e(x)ecute sth', 'call MyCallback("test")')
+
+" finally, show the menu
+call ZF_VimCmdMenuShow()
 
