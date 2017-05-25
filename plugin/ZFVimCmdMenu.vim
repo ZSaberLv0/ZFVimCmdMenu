@@ -3,53 +3,29 @@
 
 " ============================================================
 " config
-if !exists('g:ZFVimCmdMenu_confirmKeys')
-    let g:ZFVimCmdMenu_confirmKeys='o'
+let g:ZFVimCmdMenuSettingDefault={
+            \     'confirmKeys' : 'o',
+            \     'appendKeyHint' : 0,
+            \     'appendKeyHintL' : '(',
+            \     'appendKeyHintR' : ') ',
+            \     'footerText' : '',
+            \     'indentText' : '  ',
+            \     'markText' : '> ',
+            \     'cancelText' : 'canceled',
+            \ }
+let g:ZFVimCmdMenuSettingDefault['headerText']='choose by j/k, confirm by press key or <enter>'
+if len(g:ZFVimCmdMenuSettingDefault['confirmKeys']) > 0
+    for i in range(len(g:ZFVimCmdMenuSettingDefault['confirmKeys']))
+        let g:ZFVimCmdMenuSettingDefault['headerText'] .= '/' . g:ZFVimCmdMenuSettingDefault['confirmKeys'][i]
+    endfor
 endif
 
-if !exists('g:ZFVimCmdMenu_appendKeyHint')
-    let g:ZFVimCmdMenu_appendKeyHint=0
-endif
-if !exists('g:ZFVimCmdMenu_appendKeyHintLeftText')
-    let g:ZFVimCmdMenu_appendKeyHintLeftText='('
-endif
-if !exists('g:ZFVimCmdMenu_appendKeyHintRightText')
-    let g:ZFVimCmdMenu_appendKeyHintRightText=') '
-endif
-
-if !exists('g:ZFVimCmdMenu_headerText')
-    let g:ZFVimCmdMenu_headerText='choose by j/k, confirm by press key or <enter>'
-    if len(g:ZFVimCmdMenu_confirmKeys) > 0
-        for i in range(len(g:ZFVimCmdMenu_confirmKeys))
-            let g:ZFVimCmdMenu_headerText .= '/' . g:ZFVimCmdMenu_confirmKeys[i]
-        endfor
-    endif
-endif
-
-if !exists('g:ZFVimCmdMenu_footerText')
-    let g:ZFVimCmdMenu_footerText=''
-endif
-
-if !exists('g:ZFVimCmdMenu_indentText')
-    let g:ZFVimCmdMenu_indentText='  '
-endif
-
-if !exists('g:ZFVimCmdMenu_markText')
-    let g:ZFVimCmdMenu_markText='> '
-endif
-
-if !exists('g:ZFVimCmdMenu_cancelText')
-    let g:ZFVimCmdMenu_cancelText='canceled'
-endif
-
-if !exists('g:ZFVimCmdMenu_noNameItemKeyList') || 1
-    let g:ZFVimCmdMenu_noNameItemKeyList='abcdefghilmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
-    if len(g:ZFVimCmdMenu_confirmKeys) > 0
-        let g:ZFVimCmdMenu_noNameItemKeyList=substitute(
-                    \ g:ZFVimCmdMenu_noNameItemKeyList,
-                    \ '\C[' . g:ZFVimCmdMenu_confirmKeys . ']',
-                    \ '', 'g')
-    endif
+let g:ZFVimCmdMenuSettingDefault['defaultKeyList']='abcdefghilmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+if len(g:ZFVimCmdMenuSettingDefault['confirmKeys']) > 0
+    let g:ZFVimCmdMenuSettingDefault['defaultKeyList']=substitute(
+                \ g:ZFVimCmdMenuSettingDefault['defaultKeyList'],
+                \ '\C[' . g:ZFVimCmdMenuSettingDefault['confirmKeys'] . ']',
+                \ '', 'g')
 endif
 
 
@@ -58,16 +34,39 @@ let g:ZFVimCmdMenu_itemList = []
 let g:ZFVimCmdMenu_itemIndex = 0
 let s:noNameItemIndex = 0
 
-function! ZF_VimCmdMenuAdd(key, text, command, ...)
+function! ZF_VimCmdMenuSettingSave()
+    if exists('g:ZFVimCmdMenuSetting')
+        let s:settingSaved = deepcopy(g:ZFVimCmdMenuSetting, 1)
+    endif
+endfunction
+function! ZF_VimCmdMenuSettingRestore()
+    if exists('s:settingSaved')
+        let g:ZFVimCmdMenuSetting = deepcopy(s:settingSaved, 1)
+        unlet s:settingSaved
+    endif
+endfunction
+
+function! s:updateSetting()
+    if !exists('s:setting')
+        let s:setting = deepcopy(g:ZFVimCmdMenuSettingDefault, 1)
+        if exists('g:ZFVimCmdMenuSetting')
+            call extend(s:setting, g:ZFVimCmdMenuSetting, 'force')
+        endif
+    endif
+endfunction
+
+function! ZF_VimCmdMenuAdd(showKeyHint, key, text, command, ...)
+    call s:updateSetting()
     let key = a:key
 
     if len(key) == 0
-        let t = s:noNameItemIndex % len(g:ZFVimCmdMenu_noNameItemKeyList)
-        let key = g:ZFVimCmdMenu_noNameItemKeyList[t]
+        let t = s:noNameItemIndex % len(s:setting['defaultKeyList'])
+        let key = s:setting['defaultKeyList'][t]
         let s:noNameItemIndex += 1
     endif
 
     let item = {
+                \     'showKeyHint' : a:showKeyHint,
                 \     'key' : key,
                 \     'text' : a:text,
                 \     'command' : a:command,
@@ -91,17 +90,20 @@ function! ZF_VimCmdMenuAdd(key, text, command, ...)
 endfunction
 
 function! ZF_VimCmdMenuShow()
+    call s:updateSetting()
     let processing = 1
+    let s:choosedItem = {}
     while processing != 0
         let processing = s:process()
     endwhile
+    return s:choosedItem
 endfunction
 
 function! s:updateState()
     redraw!
 
-    if len(g:ZFVimCmdMenu_headerText) > 0
-        echo g:ZFVimCmdMenu_headerText
+    if len(s:setting['headerText']) > 0
+        echo s:setting['headerText']
     endif
 
     let i = 0
@@ -109,15 +111,15 @@ function! s:updateState()
         let text = ''
 
         if i == g:ZFVimCmdMenu_itemIndex
-            let text .= g:ZFVimCmdMenu_markText
+            let text .= s:setting['markText']
         else
-            let text .= g:ZFVimCmdMenu_indentText
+            let text .= s:setting['indentText']
         endif
 
-        if g:ZFVimCmdMenu_appendKeyHint
-            let text .= g:ZFVimCmdMenu_appendKeyHintLeftText
+        if item.showKeyHint == 1 || (item.showKeyHint == -1 && s:setting['appendKeyHint'])
+            let text .= s:setting['appendKeyHintL']
             let text .= item.key
-            let text .= g:ZFVimCmdMenu_appendKeyHintRightText
+            let text .= s:setting['appendKeyHintR']
         endif
 
         let text .= item.text
@@ -126,7 +128,7 @@ function! s:updateState()
         let i += 1
     endfor
 
-    echo g:ZFVimCmdMenu_footerText
+    echo s:setting['footerText']
 endfunction
 
 function! s:process()
@@ -162,8 +164,8 @@ function! s:process()
     endif
 
     redraw!
-    if len(g:ZFVimCmdMenu_cancelText) > 0
-        echo g:ZFVimCmdMenu_cancelText
+    if len(s:setting['cancelText']) > 0
+        echo s:setting['cancelText']
     endif
     return 0
 endfunction
@@ -172,9 +174,9 @@ function! s:processConfirm(cmd)
     let confirm = 0
     if a:cmd == 13
         let confirm = 1
-    elseif len(g:ZFVimCmdMenu_confirmKeys) > 0
-        for i in range(len(g:ZFVimCmdMenu_confirmKeys))
-            if a:cmd == char2nr(g:ZFVimCmdMenu_confirmKeys[i])
+    elseif len(s:setting['confirmKeys']) > 0
+        for i in range(len(s:setting['confirmKeys']))
+            if a:cmd == char2nr(s:setting['confirmKeys'][i])
                 let confirm = 1
                 break
             endif
@@ -227,9 +229,12 @@ endfunction
 
 function! s:itemSelected(index)
     let item = g:ZFVimCmdMenu_itemList[a:index]
+    let s:choosedItem = item
+
     let g:ZFVimCmdMenu_itemList = []
     let g:ZFVimCmdMenu_itemIndex = 0
     let s:noNameItemIndex = 0
+    unlet s:setting
 
     if len(item.command) > 0
         execute item.command
@@ -262,10 +267,16 @@ if 0
     endfunction
 
     " add menu item
-    call ZF_VimCmdMenuAdd('s', '(s)how sth', '', 'MyCallback', 'myParam0', 'myParam1')
-    call ZF_VimCmdMenuAdd('x', 'e(x)ecute sth', 'call MyCallback("test")')
+    call ZF_VimCmdMenuAdd(-1, 's', '(s)how sth', '', 'MyCallback', 'myParam0', 'myParam1')
+    call ZF_VimCmdMenuAdd(-1, 'x', 'e(x)ecute sth', 'call MyCallback("test")')
+    call ZF_VimCmdMenuAdd(-1, 'x', 'e(x)ecute sth2', 'call MyCallback("test")')
+    call ZF_VimCmdMenuAdd(1, '', 'loop', 'call MyCallback("")')
+    call ZF_VimCmdMenuAdd(1, '', 'loop', 'call MyCallback("")')
+    call ZF_VimCmdMenuAdd(1, '', 'loop', 'call MyCallback("")')
 
     " finally, show the menu
-    call ZF_VimCmdMenuShow()
+    let choosed = ZF_VimCmdMenuShow()
+    echo 'choosed:'
+    echo choosed
 endif
 
