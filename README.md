@@ -31,7 +31,7 @@ vim script to make a menu in cmd line
     call ZF_VimCmdMenuAdd(1, '', 'loop', 'call MyCallback("")')
 
     " finally, show the menu
-    let choosed = ZF_VimCmdMenuShow()
+    let choosed = ZF_VimCmdMenuShow('select your choice:')
     echo 'choosed:'
     echo choosed
     ```
@@ -40,13 +40,16 @@ vim script to make a menu in cmd line
     which should looks like this:
 
     ```
-    choose by j/k, confirm by press key or <enter>
-    > (s)how sth
-      e(x)ecute sth
-      e(x)ecute sth2
-      (a) loop
-      (b) loop
-      (b) loop
+    select your choice:
+
+      > (s)how sth
+        e(x)ecute sth
+        e(x)ecute sth2
+        (d) loop
+        (e) loop
+        (f) loop
+
+    choose by j/k, confirm by press key or <enter>/o
     ```
 
     the behavior should be same as [scrooloose/nerdtree](https://github.com/scrooloose/nerdtree)'s menu item
@@ -69,7 +72,7 @@ vim script to make a menu in cmd line
 # functions
 
 * `ZF_VimCmdMenuAdd(showKeyHint, key, text, command [, callback, callbackParam0, callbackParam1, ...])`
-* `ZF_VimCmdMenuShow()`
+* `ZF_VimCmdMenuShow([headerText, footerText])`
 * `ZF_VimCmdMenuSettingSave()`
 * `ZF_VimCmdMenuSettingRestore()`
 
@@ -88,6 +91,16 @@ all settings list:
 
     when pressed any of these keys, current menu item would be executed
 
+    ENTER would always used to confirm a selection
+
+* `let g:ZFVimCmdMenuSetting['escKeys']='q'`
+
+    when pressed any of these keys, cancel and close the menu
+
+    ESC would always used to close the menu,
+    any other key that not registered,
+    would also used to close the menu
+
 * `let g:ZFVimCmdMenuSetting['appendKeyHint']=0`
 
     when on, menu key hint would be printed before each menu item
@@ -101,10 +114,11 @@ all settings list:
 
 * `let g:ZFVimCmdMenuSetting['appendKeyHintL']='('`
 * `let g:ZFVimCmdMenuSetting['appendKeyHintR']=') '`
-* `let g:ZFVimCmdMenuSetting['headerText']='choose by j/k, confirm by press key or <enter>'`
+* `let g:ZFVimCmdMenuSetting['hintText']='(choose by j/k, confirm by shortcut key or press <enter>)'`
+* `let g:ZFVimCmdMenuSetting['headerText']=''`
 * `let g:ZFVimCmdMenuSetting['footerText']=''`
-* `let g:ZFVimCmdMenuSetting['indentText']='  '`
-* `let g:ZFVimCmdMenuSetting['markText']='> '`
+* `let g:ZFVimCmdMenuSetting['indentText']='    '`
+* `let g:ZFVimCmdMenuSetting['markText']='  > '`
 * `let g:ZFVimCmdMenuSetting['cancelText']='canceled'`
 * `let g:ZFVimCmdMenuSetting['defaultKeyList']='abcdefghilmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'`
 
