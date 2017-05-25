@@ -251,19 +251,21 @@ function! s:itemSelected(index)
     endif
 endfunction
 
-" define callback function
-function! MyCallback(...)
-    echo 'function called with ' . a:0 . ' param:'
-    for i in range(a:0)
-        execute 'let t=a:' . (i + 1)
-        echo t
-    endfor
-endfunction
+if 0
+    " define callback function
+    function! MyCallback(...)
+        echo 'function called with ' . a:0 . ' param:'
+        for i in range(a:0)
+            execute 'let t=a:' . (i + 1)
+            echo t
+        endfor
+    endfunction
 
-" add menu item
-call ZF_VimCmdMenuAdd('s', '(s)how sth', '', 'MyCallback', 'myParam0', 'myParam1')
-call ZF_VimCmdMenuAdd('x', 'e(x)ecute sth', 'call MyCallback("test")')
+    " add menu item
+    call ZF_VimCmdMenuAdd('s', '(s)how sth', '', 'MyCallback', 'myParam0', 'myParam1')
+    call ZF_VimCmdMenuAdd('x', 'e(x)ecute sth', 'call MyCallback("test")')
 
-" finally, show the menu
-call ZF_VimCmdMenuShow()
+    " finally, show the menu
+    call ZF_VimCmdMenuShow()
+endif
 
