@@ -1,6 +1,8 @@
 " ZFVimCmdMenu.vim - vim script to make a menu in cmd line
 " Author:  ZSaberLv0 <http://zsaber.com/>
 
+let g:ZFVimCmdMenu_loaded=1
+
 " ============================================================
 " config
 let g:ZFVimCmdMenuSettingDefault={
