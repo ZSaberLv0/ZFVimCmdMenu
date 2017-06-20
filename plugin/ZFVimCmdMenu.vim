@@ -7,11 +7,12 @@ let g:ZFVimCmdMenu_loaded=1
 " config
 let g:ZFVimCmdMenuSettingDefault={
             \     'confirmKeys' : 'o',
-            \     'escKeys' : 'q',
+            \     'escKeys' : 'q ',
+            \     'hideWhenNoMatch' : 0,
             \     'showKeyHint' : 0,
             \     'showKeyHintL' : '(',
             \     'showKeyHintR' : ') ',
-            \     'hintText' : '(choose by j/k, confirm by shortcut key or press <enter>)',
+            \     'hintText' : '(choose by j/k, confirm by shortcut or <enter> or o, cancel by <esc> or q or <space>)',
             \     'headerText' : '',
             \     'footerText' : '',
             \     'indentText' : '    ',
@@ -190,11 +191,15 @@ function! s:process()
         return 1
     endif
 
-    redraw!
-    if len(s:setting['cancelText']) > 0
-        echo s:setting['cancelText']
+    if s:setting['hideWhenNoMatch']
+        redraw!
+        if len(s:setting['cancelText']) > 0
+            echo s:setting['cancelText']
+        endif
+        return 0
+    else
+        return 1
     endif
-    return 0
 endfunction
 
 function! s:processEsc(cmd)

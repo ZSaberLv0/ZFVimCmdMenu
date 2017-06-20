@@ -47,7 +47,7 @@ how to use
             (e) loop
             (f) loop
 
-        choose by j/k, confirm by press key or <enter>/o
+        (choose by j/k, confirm by shortcut or <enter> or o, cancel by <esc> or q or <space>)
 
     the behavior should be same as [scrooloose/nerdtree](https://github.com/scrooloose/nerdtree)'s menu item
 
@@ -89,13 +89,17 @@ all settings list:
 
     ENTER would always used to confirm a selection
 
-* `let g:ZFVimCmdMenuSetting['escKeys']='q'`
+* `let g:ZFVimCmdMenuSetting['escKeys']='q '`
 
     when pressed any of these keys, cancel and close the menu
 
     ESC would always used to close the menu,
     any other key that not registered,
     would also used to close the menu
+
+* `let g:ZFVimCmdMenuSetting['hideWhenNoMatch']=0`
+
+    when pressed a key that doesn't match any item, whether to hide the menu
 
 * `let g:ZFVimCmdMenuSetting['showKeyHint']=0`
 
@@ -110,7 +114,7 @@ all settings list:
 
 * `let g:ZFVimCmdMenuSetting['showKeyHintL']='('`
 * `let g:ZFVimCmdMenuSetting['showKeyHintR']=') '`
-* `let g:ZFVimCmdMenuSetting['hintText']='(choose by j/k, confirm by shortcut key or press <enter>)'`
+* `let g:ZFVimCmdMenuSetting['hintText']='(choose by j/k, confirm by shortcut or <enter> or o, cancel by <esc> or q or <space>)'`
 * `let g:ZFVimCmdMenuSetting['headerText']=''`
 * `let g:ZFVimCmdMenuSetting['footerText']=''`
 * `let g:ZFVimCmdMenuSetting['indentText']='    '`
