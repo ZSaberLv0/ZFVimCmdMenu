@@ -32,16 +32,16 @@ endif
 " ============================================================
 let g:ZFVimCmdMenu_itemList = []
 let g:ZFVimCmdMenu_itemIndex = 0
+let s:settingSaved = []
 
 function! ZF_VimCmdMenuSettingSave()
     if exists('g:ZFVimCmdMenuSetting')
-        let s:settingSaved = deepcopy(g:ZFVimCmdMenuSetting, 1)
+        call add(s:settingSaved, deepcopy(g:ZFVimCmdMenuSetting, 1))
     endif
 endfunction
 function! ZF_VimCmdMenuSettingRestore()
-    if exists('s:settingSaved')
-        let g:ZFVimCmdMenuSetting = deepcopy(s:settingSaved, 1)
-        unlet s:settingSaved
+    if exists('s:settingSaved') && len(s:settingSaved) > 0
+        let g:ZFVimCmdMenuSetting = remove(s:settingSaved, -1)
     endif
 endfunction
 
