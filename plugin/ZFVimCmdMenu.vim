@@ -108,6 +108,7 @@ function! ZF_VimCmdMenuShow(...)
 
     call ZF_VimCmdMenuSettingRestore()
 
+    call s:itemProcess()
     return s:choosedItem
 endfunction
 
@@ -277,9 +278,15 @@ function! s:findItem(cmd)
 endfunction
 
 function! s:itemSelected(index)
+    let s:choosedItem = deepcopy(g:ZFVimCmdMenu_itemList[a:index], 1)
+endfunction
+
+function! s:itemProcess()
+    if len(s:choosedItem) <= 0
+        return
+    endif
     redraw!
-    let item = g:ZFVimCmdMenu_itemList[a:index]
-    let s:choosedItem = item
+    let item = deepcopy(s:choosedItem, 1)
 
     if len(item.command) > 0
         execute item.command
