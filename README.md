@@ -54,10 +54,10 @@ vim script to make a menu in cmd line
 
     the behavior should be same as [scrooloose/nerdtree](https://github.com/scrooloose/nerdtree)'s menu item
 
-1. params in `ZF_VimCmdMenuAdd(key, text, command [, callback, callbackParam0, callbackParam1, ...])`
+1. params in `ZF_VimCmdMenuAdd(showKeyHint, key, text, command [, callback, callbackParam0, callbackParam1, ...])`
 
     * `showKeyHint` : whether to append key hint before menu item
-        * `-1` : not specified, accorrding to `g:ZFVimCmdMenu_appendKeyHint`
+        * `-1` : not specified, accorrding to `g:ZFVimCmdMenuSetting['showKeyHint']`
         * `0` : don't show
         * `1` : show
     * `key` : the key to activate the menu item, e.g. `s`,
@@ -101,7 +101,7 @@ all settings list:
     any other key that not registered,
     would also used to close the menu
 
-* `let g:ZFVimCmdMenuSetting['appendKeyHint']=0`
+* `let g:ZFVimCmdMenuSetting['showKeyHint']=0`
 
     when on, menu key hint would be printed before each menu item
 
@@ -112,8 +112,8 @@ all settings list:
     (c) item2       item2
     ```
 
-* `let g:ZFVimCmdMenuSetting['appendKeyHintL']='('`
-* `let g:ZFVimCmdMenuSetting['appendKeyHintR']=') '`
+* `let g:ZFVimCmdMenuSetting['showKeyHintL']='('`
+* `let g:ZFVimCmdMenuSetting['showKeyHintR']=') '`
 * `let g:ZFVimCmdMenuSetting['hintText']='(choose by j/k, confirm by shortcut key or press <enter>)'`
 * `let g:ZFVimCmdMenuSetting['headerText']=''`
 * `let g:ZFVimCmdMenuSetting['footerText']=''`

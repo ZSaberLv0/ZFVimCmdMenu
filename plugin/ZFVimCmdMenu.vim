@@ -8,9 +8,9 @@ let g:ZFVimCmdMenu_loaded=1
 let g:ZFVimCmdMenuSettingDefault={
             \     'confirmKeys' : 'o',
             \     'escKeys' : 'q',
-            \     'appendKeyHint' : 0,
-            \     'appendKeyHintL' : '(',
-            \     'appendKeyHintR' : ') ',
+            \     'showKeyHint' : 0,
+            \     'showKeyHintL' : '(',
+            \     'showKeyHintR' : ') ',
             \     'hintText' : '(choose by j/k, confirm by shortcut key or press <enter>)',
             \     'headerText' : '',
             \     'footerText' : '',
@@ -129,10 +129,10 @@ function! s:updateState()
             let text .= s:setting['indentText']
         endif
 
-        if item.showKeyHint == 1 || (item.showKeyHint == -1 && s:setting['appendKeyHint'])
-            let text .= s:setting['appendKeyHintL']
+        if item.showKeyHint == 1 || (item.showKeyHint == -1 && s:setting['showKeyHint'])
+            let text .= s:setting['showKeyHintL']
             let text .= item.key
-            let text .= s:setting['appendKeyHintR']
+            let text .= s:setting['showKeyHintR']
         endif
 
         let text .= item.text
