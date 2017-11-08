@@ -6,6 +6,7 @@ let g:ZFVimCmdMenu_loaded=1
 " ============================================================
 " config
 let g:ZFVimCmdMenuSettingDefault={
+            \     'escGoBack' : 1,
             \     'confirmKeys' : 'o',
             \     'escKeys' : 'q ',
             \     'hideWhenNoMatch' : 0,
@@ -21,7 +22,7 @@ let g:ZFVimCmdMenuSettingDefault={
             \ }
 
 let g:ZFVimCmdMenuSettingDefault['defaultKeyList']='abcdefghilmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
-if len(g:ZFVimCmdMenuSettingDefault['confirmKeys']) > 0 || len(g:ZFVimCmdMenuSettingDefault['escKeys']) > 0
+if !empty(g:ZFVimCmdMenuSettingDefault['confirmKeys']) || !empty(g:ZFVimCmdMenuSettingDefault['escKeys'])
     let g:ZFVimCmdMenuSettingDefault['defaultKeyList']=substitute(
                 \ g:ZFVimCmdMenuSettingDefault['defaultKeyList'],
                 \ '\C[' . g:ZFVimCmdMenuSettingDefault['confirmKeys'] . g:ZFVimCmdMenuSettingDefault['escKeys'] . ']',
@@ -30,111 +31,134 @@ endif
 
 
 " ============================================================
-let g:ZFVimCmdMenu_itemList = []
-let g:ZFVimCmdMenu_itemIndex = 0
-let s:settingSaved = []
+" {
+"     'itemType' : 'normal/subMenu/keep',
+"     'showKeyHint' : '-1/0/1',
+"     'key' : 'any letter',
+"     'text' : 'any string',
+"     'command' : 'vim command to call',
+"     'callback' : 'vim function to call',
+"     'callbackParam0 ~ callbackParam7' : 'params passed to callback',
+" }
+let g:ZFVimCmdMenu_curItemList = []
+let g:ZFVimCmdMenu_curItemIndex = 0
+let g:ZFVimCmdMenu_curSetting = {}
 
-function! ZF_VimCmdMenuSettingSave()
-    if exists('g:ZFVimCmdMenuSetting')
-        call add(s:settingSaved, deepcopy(g:ZFVimCmdMenuSetting, 1))
-    endif
-endfunction
-function! ZF_VimCmdMenuSettingRestore()
-    if exists('s:settingSaved') && len(s:settingSaved) > 0
-        let g:ZFVimCmdMenuSetting = remove(s:settingSaved, -1)
-    endif
-endfunction
+let s:state = []
+let s:choosedItem = {}
 
-function! s:updateSetting()
-    if !exists('s:setting')
-        let s:setting = deepcopy(g:ZFVimCmdMenuSettingDefault, 1)
-        if exists('g:ZFVimCmdMenuSetting')
-            call extend(s:setting, g:ZFVimCmdMenuSetting, 'force')
-        endif
-    endif
-endfunction
-
-function! ZF_VimCmdMenuAdd(showKeyHint, key, text, command, ...)
-    call s:updateSetting()
-    let key = a:key
-
-    if len(key) == 0
-        let t = len(g:ZFVimCmdMenu_itemList) % len(s:setting['defaultKeyList'])
-        let key = s:setting['defaultKeyList'][t]
-    endif
-
+function! ZF_VimCmdMenuAdd(item)
     let item = {
-                \     'showKeyHint' : a:showKeyHint,
-                \     'key' : key,
-                \     'text' : a:text,
-                \     'command' : a:command,
+                \     'itemType' : 'normal',
+                \     'showKeyHint' : -1,
+                \     'key' : '',
+                \     'text' : '',
+                \     'command' : '',
+                \     'callback' : '',
+                \     'callbackParam0' : '',
+                \     'callbackParam1' : '',
+                \     'callbackParam2' : '',
+                \     'callbackParam3' : '',
+                \     'callbackParam4' : '',
+                \     'callbackParam5' : '',
+                \     'callbackParam6' : '',
+                \     'callbackParam7' : '',
                 \ }
-    if a:0 > 0
-        let item['callback'] = a:1
-    else
-        let item['callback'] = ''
-    endif
-    if a:0 > 1
-        for i in range(2, a:0)
-            execute 'let t = a:' . i
-            let item['callbackParam' . (i - 2)] = t
-        endfor
-    endif
-    for i in range(a:0 - 1, 7)
-        let item['callbackParam' . i] = ''
-    endfor
-
-    call add(g:ZFVimCmdMenu_itemList, item)
+    call extend(item, a:item, 'force')
+    call add(g:ZFVimCmdMenu_curItemList, item)
 endfunction
 
 function! ZF_VimCmdMenuShow(...)
-    call s:updateSetting()
-
-    if a:0 > 0
-        let s:setting['headerText'] = a:1
-        if a:0 > 1
-            let s:setting['footerText'] = a:2
+    while 1
+        if empty(g:ZFVimCmdMenu_curItemList)
+            return {}
         endif
-    endif
 
-    let processing = 1
-    let s:choosedItem = {}
-    while processing != 0
-        let processing = s:process()
+        let g:ZFVimCmdMenu_curSetting = deepcopy(g:ZFVimCmdMenuSettingDefault, 1)
+        if a:0 > 0
+            call extend(g:ZFVimCmdMenu_curSetting, a:1, 'force')
+        endif
+
+        let defaultKeyIndex = 0
+        for item in g:ZFVimCmdMenu_curItemList
+            if empty(item.key)
+                let item.key = g:ZFVimCmdMenu_curSetting['defaultKeyList'][defaultKeyIndex]
+                let defaultKeyIndex += 1
+            endif
+        endfor
+
+        let choosedItem = s:process()
+        let s:choosedItem = choosedItem
+        if empty(choosedItem)
+            continue
+        endif
+
+        if choosedItem.itemType == 'subMenu'
+            call s:statePush()
+
+            let g:ZFVimCmdMenu_curItemList = []
+            let g:ZFVimCmdMenu_curItemIndex = 0
+            let g:ZFVimCmdMenu_curSetting = {}
+            call s:itemProcess(choosedItem)
+            continue
+        elseif choosedItem.itemType == 'keep'
+            call s:itemProcess(choosedItem)
+            continue
+        else " normal or default
+            call s:statePopAll()
+            call s:itemProcess(choosedItem)
+            return choosedItem
+        endif
     endwhile
-
-    let g:ZFVimCmdMenu_itemList = []
-    let g:ZFVimCmdMenu_itemIndex = 0
-    unlet s:setting
-
-    call ZF_VimCmdMenuSettingRestore()
-
-    call s:itemProcess()
-    return s:choosedItem
 endfunction
 
-function! s:updateState()
+function! s:statePush()
+    call add(s:state, {
+                \     'curItemList' : g:ZFVimCmdMenu_curItemList,
+                \     'curItemIndex' : g:ZFVimCmdMenu_curItemIndex,
+                \     'curSetting' : g:ZFVimCmdMenu_curSetting,
+                \ })
+endfunction
+function! s:statePop()
+    if !empty(s:state)
+        let state = remove(s:state, len(s:state) - 1)
+        let g:ZFVimCmdMenu_curItemList = state['curItemList']
+        let g:ZFVimCmdMenu_curItemIndex = state['curItemIndex']
+        let g:ZFVimCmdMenu_curSetting = state['curSetting']
+    else
+        call s:statePopAll()
+    endif
+endfunction
+function! s:statePopAll()
+    let g:ZFVimCmdMenu_curItemList = []
+    let g:ZFVimCmdMenu_curItemIndex = 0
+    let g:ZFVimCmdMenu_curSetting = {}
+
+    let s:state = []
+endfunction
+
+function! s:updateUI()
     redraw!
 
-    if len(s:setting['headerText']) > 0
-        echo s:setting['headerText']
+    if !empty(g:ZFVimCmdMenu_curSetting['headerText'])
+        echo g:ZFVimCmdMenu_curSetting['headerText']
         echo ' '
     endif
 
     let i = 0
-    for item in g:ZFVimCmdMenu_itemList
+    for item in g:ZFVimCmdMenu_curItemList
         let text = ''
 
-        if i == g:ZFVimCmdMenu_itemIndex
-            let text .= s:setting['markText']
+        if i == g:ZFVimCmdMenu_curItemIndex
+            let text .= g:ZFVimCmdMenu_curSetting['markText']
         else
-            let text .= s:setting['indentText']
+            let text .= g:ZFVimCmdMenu_curSetting['indentText']
         endif
 
-        if item.showKeyHint == 1 || (item.showKeyHint == -1 && s:setting['showKeyHint'])
-            let text .= s:setting['showKeyHintL']
+        if item.showKeyHint == 1 || (item.showKeyHint == -1 && g:ZFVimCmdMenu_curSetting['showKeyHint'])
+            let text .= g:ZFVimCmdMenu_curSetting['showKeyHintL']
             let text .= item.key
-            let text .= s:setting['showKeyHintR']
+            let text .= g:ZFVimCmdMenu_curSetting['showKeyHintR']
         endif
 
         let text .= item.text
@@ -143,72 +167,73 @@ function! s:updateState()
         let i += 1
     endfor
 
-    if len(s:setting['footerText']) > 0
+    if !empty(g:ZFVimCmdMenu_curSetting['footerText'])
         echo ' '
-        echo s:setting['footerText']
+        echo g:ZFVimCmdMenu_curSetting['footerText']
     endif
 
-    if len(s:setting['hintText']) > 0
+    if !empty(g:ZFVimCmdMenu_curSetting['hintText'])
         echo ' '
-        echo s:setting['hintText']
+        echo g:ZFVimCmdMenu_curSetting['hintText']
     endif
 endfunction
 
+" return processed item or empty dict if cancel
 function! s:process()
-    call s:updateState()
-    let cmd=getchar()
+    while 1
+        call s:updateUI()
+        let cmd=getchar()
 
-    if cmd == char2nr("j")
-        if g:ZFVimCmdMenu_itemIndex + 1 < len(g:ZFVimCmdMenu_itemList)
-            let g:ZFVimCmdMenu_itemIndex += 1
-        else
-            let g:ZFVimCmdMenu_itemIndex = 0
+        if cmd == char2nr("j")
+            if g:ZFVimCmdMenu_curItemIndex + 1 < len(g:ZFVimCmdMenu_curItemList)
+                let g:ZFVimCmdMenu_curItemIndex += 1
+            else
+                let g:ZFVimCmdMenu_curItemIndex = 0
+            endif
+            continue
+        elseif cmd == char2nr("k")
+            if g:ZFVimCmdMenu_curItemIndex > 0
+                let g:ZFVimCmdMenu_curItemIndex -= 1
+            else
+                let g:ZFVimCmdMenu_curItemIndex = len(g:ZFVimCmdMenu_curItemList) - 1
+            endif
+            continue
         endif
-        return 1
-    elseif cmd == char2nr("k")
-        if g:ZFVimCmdMenu_itemIndex > 0
-            let g:ZFVimCmdMenu_itemIndex -= 1
-        else
-            let g:ZFVimCmdMenu_itemIndex = len(g:ZFVimCmdMenu_itemList) - 1
+
+        if s:processEsc(cmd)
+            return {}
         endif
-        return 1
-    endif
 
-    let processResult = s:processEsc(cmd)
-    if processResult == 1
-        return 0
-    endif
-
-    let processResult = s:processConfirm(cmd)
-    if processResult == 1
-        return 0
-    endif
-
-    let processResult = s:processItem(cmd)
-    if processResult == 1
-        return 0
-    elseif processResult == 2
-        return 1
-    endif
-
-    if s:setting['hideWhenNoMatch']
-        redraw!
-        if len(s:setting['cancelText']) > 0
-            echo s:setting['cancelText']
+        if s:processConfirm(cmd)
+            return s:choosedItem
         endif
-        return 0
-    else
-        return 1
-    endif
+
+        let processResult = s:processItem(cmd)
+        if processResult == 0
+            if g:ZFVimCmdMenu_curSetting['hideWhenNoMatch']
+                redraw!
+                if !empty(g:ZFVimCmdMenu_curSetting['cancelText'])
+                    echo g:ZFVimCmdMenu_curSetting['cancelText']
+                endif
+                return {}
+            else
+                continue
+            endif
+        elseif processResult == 1
+            return s:choosedItem
+        elseif processResult == 2
+            continue
+        endif
+    endwhile
 endfunction
 
 function! s:processEsc(cmd)
     let esc = 0
     if a:cmd == 27
         let esc = 1
-    elseif len(s:setting['escKeys']) > 0
-        for i in range(len(s:setting['escKeys']))
-            if a:cmd == char2nr(s:setting['escKeys'][i])
+    elseif !empty(g:ZFVimCmdMenu_curSetting['escKeys'])
+        for i in range(len(g:ZFVimCmdMenu_curSetting['escKeys']))
+            if a:cmd == char2nr(g:ZFVimCmdMenu_curSetting['escKeys'][i])
                 let esc = 1
                 break
             endif
@@ -217,8 +242,22 @@ function! s:processEsc(cmd)
 
     if esc == 1
         redraw!
-        if len(s:setting['cancelText']) > 0
-            echo s:setting['cancelText']
+        let cancelText = ''
+        if !empty(g:ZFVimCmdMenu_curSetting['cancelText'])
+            let cancelText = g:ZFVimCmdMenu_curSetting['cancelText']
+        endif
+        if g:ZFVimCmdMenu_curSetting['escGoBack']
+            call s:statePop()
+            if empty(g:ZFVimCmdMenu_curItemList)
+                if !empty(cancelText)
+                    echo cancelText
+                endif
+            endif
+        else
+            call s:statePopAll()
+            if !empty(cancelText)
+                echo cancelText
+            endif
         endif
         return 1
     else
@@ -230,9 +269,9 @@ function! s:processConfirm(cmd)
     let confirm = 0
     if a:cmd == 13
         let confirm = 1
-    elseif len(s:setting['confirmKeys']) > 0
-        for i in range(len(s:setting['confirmKeys']))
-            if a:cmd == char2nr(s:setting['confirmKeys'][i])
+    elseif !empty(g:ZFVimCmdMenu_curSetting['confirmKeys'])
+        for i in range(len(g:ZFVimCmdMenu_curSetting['confirmKeys']))
+            if a:cmd == char2nr(g:ZFVimCmdMenu_curSetting['confirmKeys'][i])
                 let confirm = 1
                 break
             endif
@@ -240,71 +279,70 @@ function! s:processConfirm(cmd)
     endif
 
     if confirm == 1
-        call s:itemSelected(g:ZFVimCmdMenu_itemIndex)
+        let s:choosedItem = s:itemSelected(g:ZFVimCmdMenu_curItemIndex)
         return 1
     else
         return 0
     endif
 endfunction
 
+" 0: no item matched
+" 1: 1 item match, set s:choosedItem
+" 2: more than 1 item match, continue loop to select them
 function! s:processItem(cmd)
-    let checked = s:findItem(a:cmd)
-    if len(checked) == 1
-        call s:itemSelected(checked[0])
+    let checked = []
+    let i = 0
+    for item in g:ZFVimCmdMenu_curItemList
+        if a:cmd == char2nr(item.key)
+            call add(checked, i)
+        endif
+        let i += 1
+    endfor
+
+    if len(checked) == 0
+        return 0
+    elseif len(checked) == 1
+        let g:ZFVimCmdMenu_curItemIndex = checked[0]
+        let s:choosedItem = s:itemSelected(checked[0])
         return 1
     elseif len(checked) > 1
         for i in range(len(checked))
-            if g:ZFVimCmdMenu_itemIndex == checked[i]
+            if g:ZFVimCmdMenu_curItemIndex == checked[i]
                 if i + 1 < len(checked)
-                    let g:ZFVimCmdMenu_itemIndex = checked[i + 1]
+                    let g:ZFVimCmdMenu_curItemIndex = checked[i + 1]
                 else
-                    let g:ZFVimCmdMenu_itemIndex = checked[0]
+                    let g:ZFVimCmdMenu_curItemIndex = checked[0]
                 endif
                 return 2
             endif
         endfor
-        let g:ZFVimCmdMenu_itemIndex = checked[0]
+        let g:ZFVimCmdMenu_curItemIndex = checked[0]
         return 2
     else
         return 0
     endif
 endfunction
 
-function! s:findItem(cmd)
-    let ret = []
-    let i = 0
-    for item in g:ZFVimCmdMenu_itemList
-        if a:cmd == char2nr(item.key)
-            call add(ret, i)
-        endif
-        let i += 1
-    endfor
-    return ret
-endfunction
-
 function! s:itemSelected(index)
-    let s:choosedItem = deepcopy(g:ZFVimCmdMenu_itemList[a:index], 1)
+    return deepcopy(g:ZFVimCmdMenu_curItemList[a:index], 1)
 endfunction
 
-function! s:itemProcess()
-    if len(s:choosedItem) <= 0
-        return
-    endif
+function! s:itemProcess(item)
     redraw!
-    let item = deepcopy(s:choosedItem, 1)
+    let item = a:item
 
-    if len(item.command) > 0
+    if !empty(item.command)
         execute item.command
     endif
 
-    if len(item.callback) > 0
+    if !empty(item.callback)
         let t = ''
         for i in range(8)
             let param = item['callbackParam' . i]
-            if len(param) == 0
+            if empty(param)
                 break
             endif
-            if len(t) > 0
+            if !empty(t)
                 let t .= ','
             endif
             let t .= '"' . param . '"'
@@ -313,27 +351,37 @@ function! s:itemProcess()
     endif
 endfunction
 
-if 0
-    " define callback function
-    function! MyCallback(...)
-        echo 'function called with ' . a:0 . ' param:'
-        for i in range(a:0)
-            execute 'let t=a:' . (i + 1)
-            echo t
-        endfor
+if 1
+    function! ZF_VimCmdMenuTest()
+        " define callback function
+        function! MyCallback(...)
+            echo 'function called with ' . a:0 . ' param:'
+            for i in range(a:0)
+                execute 'let t=a:' . (i + 1)
+                echo t
+            endfor
+        endfunction
+        function! MySubMenu()
+            call ZF_VimCmdMenuAdd({'showKeyHint':1, 'text':'sub menu item'})
+            call ZF_VimCmdMenuAdd({'showKeyHint':1, 'text':'sub menu item'})
+            call ZF_VimCmdMenuAdd({'itemType':'subMenu', 'showKeyHint':1, 'text':'next sub menu', 'command':'call MySubMenu()'})
+            call ZF_VimCmdMenuShow({'headerText':'select your sub menu choice:'})
+        endfunction
+
+        " add menu item
+        call ZF_VimCmdMenuAdd({'key':'s', 'text':'(s)how sth', 'callback':'MyCallback', 'callbackParam0':'myParam0', 'callbackParam1':'myParam1'})
+        call ZF_VimCmdMenuAdd({'key':'x', 'text':'e(x)ecute sth', 'command':'call MyCallback("test")'})
+        call ZF_VimCmdMenuAdd({'key':'x', 'text':'e(x)ecute sth2', 'command':'call MyCallback("test")'})
+        call ZF_VimCmdMenuAdd({'showKeyHint':1, 'text':'loop', 'command':'call MyCallback("")'})
+        call ZF_VimCmdMenuAdd({'showKeyHint':1, 'text':'loop', 'command':'call MyCallback("")'})
+        call ZF_VimCmdMenuAdd({'showKeyHint':1, 'text':'loop', 'command':'call MyCallback("")'})
+        call ZF_VimCmdMenuAdd({'itemType':'subMenu', 'showKeyHint':1, 'text':'sub menu >', 'command':'call MySubMenu()'})
+
+        " finally, show the menu
+        let choosed = ZF_VimCmdMenuShow({'headerText':'select your choice:'})
+        echo 'choosed:'
+        echo choosed
     endfunction
-
-    " add menu item
-    call ZF_VimCmdMenuAdd(-1, 's', '(s)how sth', '', 'MyCallback', 'myParam0', 'myParam1')
-    call ZF_VimCmdMenuAdd(-1, 'x', 'e(x)ecute sth', 'call MyCallback("test")')
-    call ZF_VimCmdMenuAdd(-1, 'x', 'e(x)ecute sth2', 'call MyCallback("test")')
-    call ZF_VimCmdMenuAdd(1, '', 'loop', 'call MyCallback("")')
-    call ZF_VimCmdMenuAdd(1, '', 'loop', 'call MyCallback("")')
-    call ZF_VimCmdMenuAdd(1, '', 'loop', 'call MyCallback("")')
-
-    " finally, show the menu
-    let choosed = ZF_VimCmdMenuShow('select your choice:')
-    echo 'choosed:'
-    echo choosed
+    nnoremap zzz :call ZF_VimCmdMenuTest()<cr>
 endif
 

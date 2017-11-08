@@ -21,17 +21,24 @@ vim script to make a menu in cmd line
             echo t
         endfor
     endfunction
+    function! MySubMenu()
+        call ZF_VimCmdMenuAdd({'showKeyHint':1, 'text':'sub menu item'})
+        call ZF_VimCmdMenuAdd({'showKeyHint':1, 'text':'sub menu item'})
+        call ZF_VimCmdMenuAdd({'itemType':'subMenu', 'showKeyHint':1, 'text':'next sub menu', 'command':'call MySubMenu()'})
+        call ZF_VimCmdMenuShow({'headerText':'select your sub menu choice:'})
+    endfunction
 
     " add menu item
-    call ZF_VimCmdMenuAdd(-1, 's', '(s)how sth', '', 'MyCallback', 'myParam0', 'myParam1')
-    call ZF_VimCmdMenuAdd(-1, 'x', 'e(x)ecute sth', 'call MyCallback("test")')
-    call ZF_VimCmdMenuAdd(-1, 'x', 'e(x)ecute sth2', 'call MyCallback("test")')
-    call ZF_VimCmdMenuAdd(1, '', 'loop', 'call MyCallback("")')
-    call ZF_VimCmdMenuAdd(1, '', 'loop', 'call MyCallback("")')
-    call ZF_VimCmdMenuAdd(1, '', 'loop', 'call MyCallback("")')
+    call ZF_VimCmdMenuAdd({'key':'s', 'text':'(s)how sth', 'callback':'MyCallback', 'callbackParam0':'myParam0', 'callbackParam1':'myParam1'})
+    call ZF_VimCmdMenuAdd({'key':'x', 'text':'e(x)ecute sth', 'command':'call MyCallback("test")'})
+    call ZF_VimCmdMenuAdd({'key':'x', 'text':'e(x)ecute sth2', 'command':'call MyCallback("test")'})
+    call ZF_VimCmdMenuAdd({'showKeyHint':1, 'text':'loop', 'command':'call MyCallback("")'})
+    call ZF_VimCmdMenuAdd({'showKeyHint':1, 'text':'loop', 'command':'call MyCallback("")'})
+    call ZF_VimCmdMenuAdd({'showKeyHint':1, 'text':'loop', 'command':'call MyCallback("")'})
+    call ZF_VimCmdMenuAdd({'itemType':'subMenu', 'showKeyHint':1, 'text':'sub menu >', 'command':'call MySubMenu()'})
 
     " finally, show the menu
-    let choosed = ZF_VimCmdMenuShow('select your choice:')
+    let choosed = ZF_VimCmdMenuShow({'headerText':'select your choice:'})
     echo 'choosed:'
     echo choosed
     ```
@@ -45,17 +52,22 @@ vim script to make a menu in cmd line
       > (s)how sth
         e(x)ecute sth
         e(x)ecute sth2
-        (d) loop
-        (e) loop
-        (f) loop
+        (a) loop
+        (b) loop
+        (c) loop
+        (d) sub menu >
 
     (choose by j/k, confirm by shortcut or <enter> or o, cancel by <esc> or q or <space>)
     ```
 
     the behavior should be same as [scrooloose/nerdtree](https://github.com/scrooloose/nerdtree)'s menu item
 
-1. params in `ZF_VimCmdMenuAdd(showKeyHint, key, text, command [, callback, callbackParam0, callbackParam1, ...])`
+1. params in `ZF_VimCmdMenuAdd(item)`
 
+    * `itemType` : the item's type
+        * `normal` : normal item, close all parent menu when choosed
+        * `subMenu` : sub menu item, close current menu only when choosed
+        * `keep` : keep current menu when choosed
     * `showKeyHint` : whether to append key hint before menu item
         * `-1` : not specified, accorrding to `g:ZFVimCmdMenuSetting['showKeyHint']`
         * `0` : don't show
@@ -71,10 +83,8 @@ vim script to make a menu in cmd line
 
 # functions
 
-* `ZF_VimCmdMenuAdd(showKeyHint, key, text, command [, callback, callbackParam0, callbackParam1, ...])`
-* `ZF_VimCmdMenuShow([headerText, footerText])`
-* `ZF_VimCmdMenuSettingSave()`
-* `ZF_VimCmdMenuSettingRestore()`
+* `ZF_VimCmdMenuAdd(item)`
+* `ZF_VimCmdMenuShow([setting])`
 
 # settings
 
@@ -85,7 +95,13 @@ let g:ZFVimCmdMenuSetting={}
 let g:ZFVimCmdMenuSetting['xxx']=xxx
 ```
 
+or, specify setting param to `ZF_VimCmdMenuShow` for local setting
+
 all settings list:
+
+* `let g:ZFVimCmdMenuSetting['escGoBack']=1`
+
+    when pressed esc key, whether close all menu or go back to parent menu
 
 * `let g:ZFVimCmdMenuSetting['confirmKeys']='o'`
 
