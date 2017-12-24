@@ -351,7 +351,7 @@ function! s:itemProcess(item)
     endif
 endfunction
 
-if 1
+if 0
     function! ZF_VimCmdMenuTest()
         " define callback function
         function! MyCallback(...)
