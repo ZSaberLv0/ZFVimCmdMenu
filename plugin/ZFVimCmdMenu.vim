@@ -69,9 +69,14 @@ function! ZF_VimCmdMenuAdd(item)
 endfunction
 
 function! ZF_VimCmdMenuShow(...)
+    if !exists('s:cmdheightSaved')
+        let s:cmdheightSaved = &cmdheight
+    endif
+
+    let ret = {}
     while 1
         if empty(g:ZFVimCmdMenu_curItemList)
-            return {}
+            break
         endif
 
         let g:ZFVimCmdMenu_curSetting = deepcopy(g:ZFVimCmdMenuSettingDefault, 1)
@@ -107,9 +112,16 @@ function! ZF_VimCmdMenuShow(...)
         else " normal or default
             call s:statePopAll()
             call s:itemProcess(choosedItem)
-            return choosedItem
+            let ret = choosedItem
+            break
         endif
     endwhile
+
+    if empty(g:ZFVimCmdMenu_curItemList) && exists('s:cmdheightSaved')
+        let &cmdheight = s:cmdheightSaved
+        unlet s:cmdheightSaved
+    endif
+    return ret
 endfunction
 
 function! s:statePush()
@@ -138,11 +150,10 @@ function! s:statePopAll()
 endfunction
 
 function! s:updateUI()
-    redraw!
-
+    let content = []
     if !empty(g:ZFVimCmdMenu_curSetting['headerText'])
-        echo g:ZFVimCmdMenu_curSetting['headerText']
-        echo ' '
+        call add(content, g:ZFVimCmdMenu_curSetting['headerText'])
+        call add(content, ' ')
     endif
 
     let i = 0
@@ -163,26 +174,34 @@ function! s:updateUI()
 
         let text .= item.text
 
-        echo text
+        call add(content, text)
         let i += 1
     endfor
 
     if !empty(g:ZFVimCmdMenu_curSetting['footerText'])
-        echo ' '
-        echo g:ZFVimCmdMenu_curSetting['footerText']
+        call add(content, ' ')
+        call add(content, g:ZFVimCmdMenu_curSetting['footerText'])
     endif
 
     if !empty(g:ZFVimCmdMenu_curSetting['hintText'])
-        echo ' '
-        echo g:ZFVimCmdMenu_curSetting['hintText']
+        call add(content, ' ')
+        call add(content, g:ZFVimCmdMenu_curSetting['hintText'])
     endif
+
+    let &cmdheight = len(content)
+    redraw!
+    echo join(content, "\n")
 endfunction
 
 " return processed item or empty dict if cancel
 function! s:process()
     while 1
         call s:updateUI()
-        let cmd=getchar()
+        try
+            let cmd=getchar()
+        catch
+            let cmd=char2nr("\<esc>")
+        endtry
 
         if cmd == char2nr("j")
             if g:ZFVimCmdMenu_curItemIndex + 1 < len(g:ZFVimCmdMenu_curItemList)
@@ -229,7 +248,7 @@ endfunction
 
 function! s:processEsc(cmd)
     let esc = 0
-    if a:cmd == 27
+    if a:cmd == char2nr("\<esc>")
         let esc = 1
     elseif !empty(g:ZFVimCmdMenu_curSetting['escKeys'])
         for i in range(len(g:ZFVimCmdMenu_curSetting['escKeys']))
