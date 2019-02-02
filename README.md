@@ -2,6 +2,9 @@
 
 vim script to make a menu in cmd line
 
+if you like my work, [check here](https://github.com/ZSaberLv0?utf8=%E2%9C%93&tab=repositories&q=ZFVim) for a list of my vim plugins
+
+
 # how to use
 
 1. use [Vundle](https://github.com/VundleVim/Vundle.vim) or any other plugin manager you like to install
