@@ -69,10 +69,6 @@ function! ZF_VimCmdMenuAdd(item)
 endfunction
 
 function! ZF_VimCmdMenuShow(...)
-    if !exists('s:cmdheightSaved')
-        let s:cmdheightSaved = &cmdheight
-    endif
-
     let ret = {}
     while 1
         if empty(g:ZFVimCmdMenu_curItemList)
@@ -111,23 +107,12 @@ function! ZF_VimCmdMenuShow(...)
             continue
         else " normal or default
             call s:statePopAll()
-
-            " restore cmdheight first to prevent item's `echo` from being cleared
-            if empty(g:ZFVimCmdMenu_curItemList) && exists('s:cmdheightSaved')
-                let &cmdheight = s:cmdheightSaved
-                unlet s:cmdheightSaved
-            endif
-
             call s:itemProcess(choosedItem)
             let ret = choosedItem
-            return ret
+            break
         endif
     endwhile
 
-    if empty(g:ZFVimCmdMenu_curItemList) && exists('s:cmdheightSaved')
-        let &cmdheight = s:cmdheightSaved
-        unlet s:cmdheightSaved
-    endif
     return ret
 endfunction
 
@@ -195,7 +180,6 @@ function! s:updateUI()
         call add(content, g:ZFVimCmdMenu_curSetting['hintText'])
     endif
 
-    let &cmdheight = len(content)
     redraw!
     echo join(content, "\n")
 endfunction
