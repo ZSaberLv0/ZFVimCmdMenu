@@ -72,6 +72,7 @@ or [buy me a coffee](https://github.com/ZSaberLv0/ZSaberLv0)
         * `normal` : normal item, close all parent menu when choosed
         * `subMenu` : sub menu item, close current menu only when choosed
         * `keep` : keep current menu when choosed
+        * `hint` : just a placeholder hint, can not be choosed
     * `showKeyHint` : whether to append key hint before menu item
         * `-1` : not specified, accorrding to `g:ZFVimCmdMenuSetting['showKeyHint']`
         * `0` : don't show

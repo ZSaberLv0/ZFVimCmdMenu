@@ -32,7 +32,7 @@ endif
 
 " ============================================================
 " {
-"     'itemType' : 'normal/subMenu/keep',
+"     'itemType' : 'normal/subMenu/keep/hint',
 "     'showKeyHint' : '-1/0/1',
 "     'key' : 'any letter',
 "     'text' : 'any string',
@@ -81,12 +81,20 @@ function! ZF_VimCmdMenuShow(...)
         endif
 
         let defaultKeyIndex = 0
+        let hasValidItem = 0
         for item in g:ZFVimCmdMenu_curItemList
-            if empty(item.key)
+            if item.itemType != 'hint'
+                let hasValidItem = 1
+            endif
+            if empty(item.key) && item.itemType != 'hint'
                 let item.key = g:ZFVimCmdMenu_curSetting['defaultKeyList'][defaultKeyIndex]
                 let defaultKeyIndex += 1
             endif
         endfor
+        if !hasValidItem
+            echo 'no valid menu item'
+            break
+        endif
 
         let choosedItem = s:process()
         let s:choosedItem = choosedItem
@@ -158,7 +166,7 @@ function! s:updateUI()
             let text .= g:ZFVimCmdMenu_curSetting['indentText']
         endif
 
-        if item.showKeyHint == 1 || (item.showKeyHint == -1 && g:ZFVimCmdMenu_curSetting['showKeyHint'])
+        if item.showKeyHint == 1 || (item.showKeyHint == -1 && item.itemType != 'hint' && g:ZFVimCmdMenu_curSetting['showKeyHint'])
             let text .= g:ZFVimCmdMenu_curSetting['showKeyHintL']
             let text .= item.key
             let text .= g:ZFVimCmdMenu_curSetting['showKeyHintR']
@@ -195,18 +203,26 @@ function! s:process()
         endtry
 
         if cmd == char2nr("j")
-            if g:ZFVimCmdMenu_curItemIndex + 1 < len(g:ZFVimCmdMenu_curItemList)
+            while 1
                 let g:ZFVimCmdMenu_curItemIndex += 1
-            else
-                let g:ZFVimCmdMenu_curItemIndex = 0
-            endif
+                if g:ZFVimCmdMenu_curItemIndex >= len(g:ZFVimCmdMenu_curItemList)
+                    let g:ZFVimCmdMenu_curItemIndex = 0
+                endif
+                if g:ZFVimCmdMenu_curItemList[g:ZFVimCmdMenu_curItemIndex].itemType != 'hint'
+                    break
+                endif
+            endwhile
             continue
         elseif cmd == char2nr("k")
-            if g:ZFVimCmdMenu_curItemIndex > 0
+            while 1
                 let g:ZFVimCmdMenu_curItemIndex -= 1
-            else
-                let g:ZFVimCmdMenu_curItemIndex = len(g:ZFVimCmdMenu_curItemList) - 1
-            endif
+                if g:ZFVimCmdMenu_curItemIndex < 0
+                    let g:ZFVimCmdMenu_curItemIndex = len(g:ZFVimCmdMenu_curItemList) - 1
+                endif
+                if g:ZFVimCmdMenu_curItemList[g:ZFVimCmdMenu_curItemIndex].itemType != 'hint'
+                    break
+                endif
+            endwhile
             continue
         endif
 
