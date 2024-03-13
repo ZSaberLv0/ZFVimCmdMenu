@@ -156,6 +156,7 @@ function! s:updateUI()
         call add(content, ' ')
     endif
 
+    let contentOffset = len(content)
     let i = 0
     for item in g:ZFVimCmdMenu_curItemList
         let text = ''
@@ -178,14 +179,31 @@ function! s:updateUI()
         let i += 1
     endfor
 
+    let footerLen = 0
+
     if !empty(g:ZFVimCmdMenu_curSetting['footerText'])
         call add(content, ' ')
         call add(content, g:ZFVimCmdMenu_curSetting['footerText'])
+        let footerLen += 2
     endif
 
     if !empty(g:ZFVimCmdMenu_curSetting['hintText'])
         call add(content, ' ')
         call add(content, g:ZFVimCmdMenu_curSetting['hintText'])
+        let footerLen += 2
+    endif
+
+    let limit = &lines - 2
+    if len(content) > limit
+        let p = contentOffset + g:ZFVimCmdMenu_curItemIndex
+        while len(content) > limit
+            if p >= limit - footerLen
+                call remove(content, 0)
+                let p -= 1
+            else
+                call remove(content, -1)
+            endif
+        endwhile
     endif
 
     redraw!
