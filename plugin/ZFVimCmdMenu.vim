@@ -150,13 +150,14 @@ function! s:statePopAll()
 endfunction
 
 function! s:updateUI()
+    let contentHeader = []
     let content = []
+    let contentFooter = []
     if !empty(g:ZFVimCmdMenu_curSetting['headerText'])
-        call add(content, g:ZFVimCmdMenu_curSetting['headerText'])
-        call add(content, ' ')
+        call add(contentHeader, g:ZFVimCmdMenu_curSetting['headerText'])
+        call add(contentHeader, ' ')
     endif
 
-    let contentOffset = len(content)
     let i = 0
     for item in g:ZFVimCmdMenu_curItemList
         let text = ''
@@ -179,35 +180,45 @@ function! s:updateUI()
         let i += 1
     endfor
 
-    let footerLen = 0
-
     if !empty(g:ZFVimCmdMenu_curSetting['footerText'])
-        call add(content, ' ')
-        call add(content, g:ZFVimCmdMenu_curSetting['footerText'])
-        let footerLen += 2
+        call add(contentFooter, ' ')
+        call add(contentFooter, g:ZFVimCmdMenu_curSetting['footerText'])
     endif
 
     if !empty(g:ZFVimCmdMenu_curSetting['hintText'])
-        call add(content, ' ')
-        call add(content, g:ZFVimCmdMenu_curSetting['hintText'])
-        let footerLen += 2
+        call add(contentFooter, ' ')
+        call add(contentFooter, g:ZFVimCmdMenu_curSetting['hintText'])
     endif
 
-    let limit = &lines - 2
-    if len(content) > limit
-        let p = contentOffset + g:ZFVimCmdMenu_curItemIndex
-        while len(content) > limit
-            if p >= limit - footerLen
-                call remove(content, 0)
-                let p -= 1
-            else
-                call remove(content, -1)
+    let limit = &lines - len(contentHeader) - len(contentFooter) - 4
+    let curItemIndex = g:ZFVimCmdMenu_curItemIndex
+    let contentTrimedHead = 0
+    let contentTrimedFoot = 0
+    while len(content) > limit
+        if curItemIndex >= limit && curItemIndex > 0
+            if !contentTrimedHead
+                let contentTrimedHead = 1
+                call add(contentHeader, g:ZFVimCmdMenu_curSetting['indentText'] . '...')
+                let limit -= 1
             endif
-        endwhile
-    endif
+            call remove(content, 0)
+            let curItemIndex -= 1
+        else
+            if !contentTrimedFoot
+                let contentTrimedFoot = 1
+                call insert(contentFooter, g:ZFVimCmdMenu_curSetting['indentText'] . '...', 0)
+                let limit -= 1
+            endif
+            call remove(content, -1)
+        endif
+    endwhile
 
     redraw!
-    echo join(content, "\n")
+    let lines = []
+    call extend(lines, contentHeader)
+    call extend(lines, content)
+    call extend(lines, contentFooter)
+    echo join(lines, "\n")
 endfunction
 
 " return processed item or empty dict if cancel
