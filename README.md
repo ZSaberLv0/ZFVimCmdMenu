@@ -91,6 +91,7 @@ or [buy me a coffee](https://github.com/ZSaberLv0/ZSaberLv0)
 * `ZF_VimCmdMenuAdd(item)`
 * `ZF_VimCmdMenuShow([setting])`
 
+
 # settings
 
 add this to your vimrc to change settings
